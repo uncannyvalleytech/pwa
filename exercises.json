@@ -1,0 +1,282 @@
+[
+    {
+        "name": "Barbell Bench Press",
+        "muscle": "Chest",
+        "type": "Primary",
+        "equipment": ["barbell", "bench", "rack"],
+        "alternatives": ["Dumbbell Bench Press", "Machine Chest Press"]
+    },
+    {
+        "name": "Dumbbell Bench Press",
+        "muscle": "Chest",
+        "type": "Primary",
+        "equipment": ["dumbbell", "bench"],
+        "alternatives": ["Barbell Bench Press", "Machine Chest Press"]
+    },
+    {
+        "name": "Incline Barbell Press",
+        "muscle": "Chest",
+        "type": "Primary",
+        "equipment": ["barbell", "bench", "rack"],
+        "alternatives": ["Incline Dumbbell Press", "Incline Machine Press"]
+    },
+    {
+        "name": "Incline Dumbbell Press",
+        "muscle": "Chest",
+        "type": "Primary",
+        "equipment": ["dumbbell", "bench"],
+        "alternatives": ["Incline Barbell Press", "Incline Machine Press"]
+    },
+    {
+        "name": "Machine Chest Press",
+        "muscle": "Chest",
+        "type": "Secondary",
+        "equipment": ["machine"],
+        "alternatives": ["Dumbbell Bench Press", "Push-ups"]
+    },
+    {
+        "name": "Incline Machine Press",
+        "muscle": "Chest",
+        "type": "Secondary",
+        "equipment": ["machine"],
+        "alternatives": ["Incline Dumbbell Press", "Incline Push-ups"]
+    },
+    {
+        "name": "Cable Crossover",
+        "muscle": "Chest",
+        "type": "Secondary",
+        "equipment": ["cable"],
+        "alternatives": ["Pec Deck Fly", "Dumbbell Fly"]
+    },
+    {
+        "name": "Pec Deck Fly",
+        "muscle": "Chest",
+        "type": "Secondary",
+        "equipment": ["machine"],
+        "alternatives": ["Cable Crossover", "Dumbbell Fly"]
+    },
+    {
+        "name": "Dumbbell Fly",
+        "muscle": "Chest",
+        "type": "Secondary",
+        "equipment": ["dumbbell", "bench"],
+        "alternatives": ["Cable Crossover", "Pec Deck Fly"]
+    },
+    {
+        "name": "Push-up",
+        "muscle": "Chest",
+        "type": "Secondary",
+        "equipment": ["bodyweight"],
+        "alternatives": ["Machine Chest Press", "Dumbbell Bench Press"]
+    },
+    {
+        "name": "Barbell Squat",
+        "muscle": "Quads",
+        "type": "Primary",
+        "equipment": ["barbell", "rack"],
+        "alternatives": ["Leg Press", "Goblet Squat"]
+    },
+    {
+        "name": "Leg Press",
+        "muscle": "Quads",
+        "type": "Primary",
+        "equipment": ["machine"],
+        "alternatives": ["Barbell Squat", "Hack Squat"]
+    },
+    {
+        "name": "Hack Squat",
+        "muscle": "Quads",
+        "type": "Primary",
+        "equipment": ["machine"],
+        "alternatives": ["Leg Press", "Barbell Squat"]
+    },
+    {
+        "name": "Goblet Squat",
+        "muscle": "Quads",
+        "type": "Secondary",
+        "equipment": ["dumbbell"],
+        "alternatives": ["Leg Extension", "Bodyweight Squat"]
+    },
+    {
+        "name": "Leg Extension",
+        "muscle": "Quads",
+        "type": "Secondary",
+        "equipment": ["machine"],
+        "alternatives": ["Goblet Squat", "Walking Lunge"]
+    },
+    {
+        "name": "Walking Lunge",
+        "muscle": "Quads",
+        "type": "Secondary",
+        "equipment": ["dumbbell", "bodyweight"],
+        "alternatives": ["Leg Extension", "Bulgarian Split Squat"]
+    },
+    {
+        "name": "Deadlift",
+        "muscle": "Back",
+        "type": "Primary",
+        "equipment": ["barbell"],
+        "alternatives": ["Romanian Deadlift", "Good Morning"]
+    },
+    {
+        "name": "Pull-up",
+        "muscle": "Back",
+        "type": "Primary",
+        "equipment": ["pullup-bar", "bodyweight"],
+        "alternatives": ["Lat Pulldown", "Chin-up"]
+    },
+    {
+        "name": "Chin-up",
+        "muscle": "Back",
+        "type": "Primary",
+        "equipment": ["pullup-bar", "bodyweight"],
+        "alternatives": ["Lat Pulldown", "Pull-up"]
+    },
+    {
+        "name": "Barbell Row",
+        "muscle": "Back",
+        "type": "Primary",
+        "equipment": ["barbell"],
+        "alternatives": ["Dumbbell Row", "T-Bar Row"]
+    },
+    {
+        "name": "Dumbbell Row",
+        "muscle": "Back",
+        "type": "Primary",
+        "equipment": ["dumbbell", "bench"],
+        "alternatives": ["Barbell Row", "Machine Row"]
+    },
+    {
+        "name": "Lat Pulldown",
+        "muscle": "Back",
+        "type": "Secondary",
+        "equipment": ["cable", "machine"],
+        "alternatives": ["Pull-up", "Chin-up"]
+    },
+    {
+        "name": "T-Bar Row",
+        "muscle": "Back",
+        "type": "Secondary",
+        "equipment": ["barbell", "machine"],
+        "alternatives": ["Barbell Row", "Seated Cable Row"]
+    },
+    {
+        "name": "Seated Cable Row",
+        "muscle": "Back",
+        "type": "Secondary",
+        "equipment": ["cable"],
+        "alternatives": ["Machine Row", "Dumbbell Row"]
+    },
+    {
+        "name": "Romanian Deadlift",
+        "muscle": "Hamstrings",
+        "type": "Primary",
+        "equipment": ["barbell", "dumbbell"],
+        "alternatives": ["Good Morning", "Leg Curl"]
+    },
+    {
+        "name": "Leg Curl",
+        "muscle": "Hamstrings",
+        "type": "Secondary",
+        "equipment": ["machine"],
+        "alternatives": ["Romanian Deadlift", "Glute-Ham Raise"]
+    },
+    {
+        "name": "Good Morning",
+        "muscle": "Hamstrings",
+        "type": "Secondary",
+        "equipment": ["barbell", "rack"],
+        "alternatives": ["Romanian Deadlift", "Back Extension"]
+    },
+    {
+        "name": "Overhead Press",
+        "muscle": "Shoulders",
+        "type": "Primary",
+        "equipment": ["barbell", "rack"],
+        "alternatives": ["Seated Dumbbell Press", "Machine Shoulder Press"]
+    },
+    {
+        "name": "Seated Dumbbell Press",
+        "muscle": "Shoulders",
+        "type": "Primary",
+        "equipment": ["dumbbell", "bench"],
+        "alternatives": ["Overhead Press", "Arnold Press"]
+    },
+    {
+        "name": "Lateral Raise",
+        "muscle": "Shoulders",
+        "type": "Secondary",
+        "equipment": ["dumbbell", "cable"],
+        "alternatives": ["Upright Row", "Machine Lateral Raise"]
+    },
+    {
+        "name": "Face Pull",
+        "muscle": "Shoulders",
+        "type": "Secondary",
+        "equipment": ["cable"],
+        "alternatives": ["Reverse Pec Deck", "Bent-Over Dumbbell Raise"]
+    },
+    {
+        "name": "Barbell Curl",
+        "muscle": "Biceps",
+        "type": "Secondary",
+        "equipment": ["barbell"],
+        "alternatives": ["Dumbbell Curl", "Preacher Curl"]
+    },
+    {
+        "name": "Dumbbell Curl",
+        "muscle": "Biceps",
+        "type": "Secondary",
+        "equipment": ["dumbbell"],
+        "alternatives": ["Barbell Curl", "Hammer Curl"]
+    },
+    {
+        "name": "Hammer Curl",
+        "muscle": "Biceps",
+        "type": "Secondary",
+        "equipment": ["dumbbell"],
+        "alternatives": ["Dumbbell Curl", "Cable Curl"]
+    },
+    {
+        "name": "Triceps Pushdown",
+        "muscle": "Triceps",
+        "type": "Secondary",
+        "equipment": ["cable"],
+        "alternatives": ["Skull Crusher", "Overhead Triceps Extension"]
+    },
+    {
+        "name": "Skull Crusher",
+        "muscle": "Triceps",
+        "type": "Secondary",
+        "equipment": ["barbell", "dumbbell", "bench"],
+        "alternatives": ["Triceps Pushdown", "Close-Grip Bench Press"]
+    },
+    {
+        "name": "Close-Grip Bench Press",
+        "muscle": "Triceps",
+        "type": "Secondary",
+        "equipment": ["barbell", "bench", "rack"],
+        "alternatives": ["Dips", "Skull Crusher"]
+    },
+    {
+        "name": "Plank",
+        "muscle": "Core",
+        "type": "Secondary",
+        "equipment": ["bodyweight"],
+        "alternatives": ["Ab Wheel Rollout", "Hanging Leg Raise"]
+    },
+    {
+        "name": "Hanging Leg Raise",
+        "muscle": "Core",
+        "type": "Secondary",
+        "equipment": ["pullup-bar"],
+        "alternatives": ["Cable Crunch", "Decline Crunch"]
+    },
+    {
+        "name": "Cable Crunch",
+        "muscle": "Core",
+        "type": "Secondary",
+        "equipment": ["cable"],
+        "alternatives": ["Hanging Leg Raise", "Machine Crunch"]
+    }
+]
