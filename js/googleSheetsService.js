@@ -72,9 +72,6 @@ async function makeAppsScriptRequest(action, data = null) {
             options = {
                 method: 'GET',
                 signal: controller.signal,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
             };
         } else {
             // POST requests - send data in body as form data to avoid preflight
