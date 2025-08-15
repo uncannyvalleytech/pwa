@@ -12,7 +12,6 @@ import { APPS_SCRIPT_URL } from './env.js';
 const LOCAL_STORAGE_KEY = 'progressionAppState';
 const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const REQUEST_TIMEOUT = 15000; // 15 seconds
-const REDIRECT_URI = window.location.origin + window.location.pathname;
 
 // --- GLOBAL VARIABLES ---
 let syncIntervalId = null;
@@ -50,7 +49,6 @@ function createDefaultUserData() {
         isWorkoutInProgress: false,
         lastSyncTime: null,
         spreadsheetId: null,
-        accessToken: null, // New access token field
     };
 }
 
@@ -107,22 +105,23 @@ async function makeAppsScriptRequest(method, data = null) {
                 mode: 'no-cors' // This prevents CORS preflight
             });
         } else {
-            response = await fetch(APPS_SCRIPT_URL, {
+            // Updated POST request to also use 'no-cors' to avoid preflight issues
+            const url = `${APPS_SCRIPT_URL}?${new URLSearchParams(data)}`;
+            response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
                 signal: controller.signal,
-                mode: 'cors'
+                mode: 'no-cors'
             });
         }
         
         clearTimeout(timeoutId);
         
-        // For no-cors mode, we can't read the response
+        // For no-cors mode, we can't read the response. The user will have to trust that the action worked.
         if (response.type === 'opaque') {
-            // Assume success for no-cors requests
             return { success: true };
         }
         
@@ -522,33 +521,10 @@ export async function loadExercises() {
     }
 }
 
-export function connectToUserAccount() {
-    showModal(
-        'Connect Google Account',
-        `<p>To export your data to your own Google Sheet, you need to grant the app permission to create and edit files in your Google Drive.</p>
-         <p>This will redirect you to a Google authentication page. All your data will remain in your own account.</p>`,
-        [
-            {
-                text: 'Proceed to Google',
-                class: 'cta-button',
-                action: () => {
-                    window.location.href = googleAuthUrl;
-                }
-            },
-            {
-                text: 'Cancel',
-                class: 'secondary-button',
-                action: closeModal
-            }
-        ]
-    );
-}
+// Removed the flawed connectToUserAccount function
+// The logic to prompt the user is now back in initializeDataService
 
 // --- EVENT LISTENERS ---
 window.addEventListener('beforeunload', () => syncData());
 window.addEventListener('online', () => { isOnline = true; });
 window.addEventListener('offline', () => { isOnline = false; });
-
-const url = new URL(APPS_SCRIPT_URL);
-const scriptId = url.pathname.split('/')[3];
-const googleAuthUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${scriptId}.apps.googleusercontent.com&redirect_uri=${REDIRECT_URI}&response_type=token&scope=https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file`;
