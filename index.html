@@ -11,7 +11,7 @@
         script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
         style-src 'self' 'unsafe-inline';
         img-src 'self' data: https:;
-        connect-src 'self' https://script.google.com;
+        connect-src 'self' https://script.google.com https://script.googleusercontent.com;
         font-src 'self';
         object-src 'none';
         base-uri 'self';
@@ -306,6 +306,7 @@
 <section class="settings-section">
     <h3>Data Management</h3>
     <button id="export-data-btn" class="cta-button secondary-button">Download Data Backup</button>
+    <button id="connect-google-btn" class="cta-button secondary-button" data-action="connectGoogleAccount">Connect to Google</button>
     <button id="reset-app-btn" class="cta-button secondary-button">Reset App</button>
 </section>
                 <section class="settings-section">
