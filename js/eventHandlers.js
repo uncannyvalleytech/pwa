@@ -760,6 +760,7 @@ export function initEventListeners() {
             selectAlternative: () => selectAlternative(dataset.newExerciseName, dataset.exerciseIndex),
             openExerciseNotes: () => openExerciseNotes(dataset.exerciseIndex),
             showHistory: () => showHistory(dataset.exerciseId),
+            connectGoogleAccount: () => googleSheets.connectToUserAccount()
         };
 
         if (actions[action]) {
