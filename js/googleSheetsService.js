@@ -95,9 +95,12 @@ async function makeAppsScriptRequest(method, data = null) {
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
     
     try {
-        // Updated logic to use a simple GET request for all calls,
-        // which avoids the CORS preflight issue. Data is sent via query parameters.
-        const queryParams = new URLSearchParams(data);
+        // Updated logic to always send data via URLSearchParams,
+        // which makes the request a simple GET and avoids CORS preflight issues.
+        const queryParams = new URLSearchParams({
+            method: method, // Add the original method to the query params
+            ...data
+        });
         const url = `${APPS_SCRIPT_URL}?${queryParams.toString()}`;
         
         const response = await fetch(url, {
