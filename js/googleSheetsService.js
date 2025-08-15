@@ -1,11 +1,11 @@
-// js/googleSheetsService.js - CORS Workaround Version
+// js/googleSheetsService.js - Fixed CORS Version
 import { state } from './state.js';
 import { showModal, closeModal } from './ui.js';
 import { APPS_SCRIPT_URL } from './env.js';
 
 /**
  * @file This service handles data persistence using Google Apps Script
- * Uses a CORS workaround approach for better compatibility
+ * Fixed version with proper CORS handling
  */
 
 // --- CONFIGURATION ---
@@ -53,6 +53,245 @@ function createDefaultUserData() {
 }
 
 /**
+ * Makes request to Apps Script with proper CORS handling
+ */
+async function makeAppsScriptRequest(action, data = null) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    
+    try {
+        let url, options;
+        
+        if (action === 'loadData' || action === 'testConnection') {
+            // GET requests - use query parameters
+            const params = new URLSearchParams({
+                action: action,
+                ...(data || {})
+            });
+            url = `${APPS_SCRIPT_URL}?${params.toString()}`;
+            options = {
+                method: 'GET',
+                signal: controller.signal,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+        } else {
+            // POST requests - send data in body as form data to avoid preflight
+            const formData = new FormData();
+            formData.append('action', action);
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    formData.append(key, typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key]);
+                });
+            }
+            
+            url = APPS_SCRIPT_URL;
+            options = {
+                method: 'POST',
+                signal: controller.signal,
+                body: formData,
+            };
+        }
+        
+        console.log(`Making ${options.method} request to Apps Script:`, action);
+        
+        const response = await fetch(url, options);
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        isOnline = true;
+        
+        console.log('Apps Script response:', result);
+        return result;
+        
+    } catch (error) {
+        clearTimeout(timeoutId);
+        console.error('Apps Script request failed:', error);
+        
+        // For connection errors, try a simple JSONP fallback for GET requests
+        if (action === 'loadData' && !error.name === 'AbortError') {
+            try {
+                console.log('Trying JSONP fallback...');
+                return await makeJsonpRequest({ action, ...data });
+            } catch (jsonpError) {
+                console.warn('JSONP fallback also failed:', jsonpError);
+            }
+        }
+        
+        isOnline = false;
+        throw error;
+    }
+}
+
+/**
+ * JSONP-like request using script injection (fallback for GET requests)
+ */
+function makeJsonpRequest(params = {}) {
+    return new Promise((resolve, reject) => {
+        const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const script = document.createElement('script');
+        const url = new URL(APPS_SCRIPT_URL);
+        
+        // Add parameters
+        Object.keys(params).forEach(key => {
+            url.searchParams.append(key, typeof params[key] === 'object' ? JSON.stringify(params[key]) : params[key]);
+        });
+        url.searchParams.append('callback', callbackName);
+        
+        // Set up callback
+        window[callbackName] = function(data) {
+            cleanup();
+            resolve(data);
+        };
+        
+        // Set up error handling
+        script.onerror = function() {
+            cleanup();
+            reject(new Error('JSONP request failed'));
+        };
+        
+        function cleanup() {
+            if (script.parentNode) {
+                document.head.removeChild(script);
+            }
+            delete window[callbackName];
+        }
+        
+        script.src = url.toString();
+        document.head.appendChild(script);
+        
+        // Timeout
+        setTimeout(() => {
+            if (window[callbackName]) {
+                cleanup();
+                reject(new Error('JSONP request timeout'));
+            }
+        }, REQUEST_TIMEOUT);
+    });
+}
+
+/**
+ * Test connection to Apps Script
+ */
+async function testConnection() {
+    try {
+        console.log('Testing connection to Apps Script...');
+        const result = await makeAppsScriptRequest('testConnection');
+        console.log('Connection test result:', result);
+        return result && result.success !== false;
+    } catch (error) {
+        console.error('Connection test failed:', error);
+        return false;
+    }
+}
+
+/**
+ * Creates a new spreadsheet
+ */
+async function createUserSpreadsheet() {
+    try {
+        console.log('Creating new spreadsheet...');
+        
+        const result = await makeAppsScriptRequest('createSpreadsheet');
+        
+        if (result && result.success && result.spreadsheetId) {
+            spreadsheetId = result.spreadsheetId;
+            console.log('Spreadsheet created successfully:', spreadsheetId);
+            saveToLocalStorage();
+            return spreadsheetId;
+        } else {
+            throw new Error(result?.error || 'Failed to create spreadsheet - no spreadsheet ID returned');
+        }
+        
+    } catch (error) {
+        console.error('Error creating spreadsheet:', error);
+        throw error;
+    }
+}
+
+/**
+ * Saves data to Google Sheets
+ */
+async function saveDataToSheets() {
+    if (!spreadsheetId || !isOnline) {
+        console.log('Cannot save to sheets - missing spreadsheetId or offline');
+        return false;
+    }
+    
+    try {
+        console.log('Saving data to Google Sheets...');
+        
+        const dataToSave = {
+            userSelections: state.userSelections,
+            settings: state.settings,
+            allPlans: state.allPlans,
+            activePlanId: state.activePlanId,
+            workoutHistory: state.workoutHistory,
+            personalRecords: state.personalRecords,
+            savedTemplates: state.savedTemplates,
+            currentView: state.currentView,
+            isWorkoutInProgress: state.workoutTimer.isWorkoutInProgress,
+        };
+        
+        const result = await makeAppsScriptRequest('saveData', {
+            spreadsheetId: spreadsheetId,
+            data: dataToSave
+        });
+        
+        if (result && result.success) {
+            state.lastSyncTime = result.timestamp || new Date().toISOString();
+            console.log('Data synced successfully to Google Sheets');
+            return true;
+        } else {
+            throw new Error(result?.error || 'Save operation failed');
+        }
+        
+    } catch (error) {
+        console.error('Error saving to Google Sheets:', error);
+        return false;
+    }
+}
+
+/**
+ * Loads data from Google Sheets
+ */
+async function loadDataFromSheets() {
+    if (!spreadsheetId || !isOnline) {
+        console.log('Cannot load from sheets - missing spreadsheetId or offline');
+        return null;
+    }
+    
+    try {
+        console.log('Loading data from Google Sheets...');
+        
+        const result = await makeAppsScriptRequest('loadData', {
+            spreadsheetId: spreadsheetId
+        });
+        
+        if (result && result.error) {
+            throw new Error(result.error);
+        }
+        
+        if (result && (result.UserSelections || Object.keys(result).length > 0)) {
+            console.log('Data loaded successfully from Google Sheets');
+            return result;
+        }
+        
+        console.log('No data found in Google Sheets');
+        return null;
+        
+    } catch (error) {
+        console.error('Error loading from Google Sheets:', error);
+        return null;
+    }
+}
+
+/**
  * Applies data to application state
  */
 function applyDataToState(data) {
@@ -70,7 +309,7 @@ function applyDataToState(data) {
         state.personalRecords = data.PersonalRecords || [];
         state.workoutTimer.isWorkoutInProgress = data.IsWorkoutInProgress === true || data.IsWorkoutInProgress === 'true';
         state.lastSyncTime = data.Timestamp || null;
-        spreadsheetId = data.SpreadsheetId || null; // Ensure spreadsheetId is updated
+        spreadsheetId = data.SpreadsheetId || null;
     } else {
         // Handle local storage format
         state.userSelections = { ...state.userSelections, ...data.userSelections };
@@ -84,206 +323,6 @@ function applyDataToState(data) {
         state.workoutTimer.isWorkoutInProgress = data.isWorkoutInProgress || false;
         state.lastSyncTime = data.lastSyncTime || null;
         spreadsheetId = data.spreadsheetId || null;
-    }
-}
-
-/**
- * Makes request with multiple fallback strategies
- */
-async function makeAppsScriptRequest(method, data = null) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-    
-    try {
-        // Updated logic to always send data via URLSearchParams,
-        // which makes the request a simple GET and avoids CORS preflight issues.
-        const queryParams = new URLSearchParams({
-            method: method, // Add the original method to the query params
-            ...data
-        });
-        const url = `${APPS_SCRIPT_URL}?${queryParams.toString()}`;
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            signal: controller.signal,
-            mode: 'no-cors' // Use 'no-cors' for all requests to avoid preflight
-        });
-        
-        clearTimeout(timeoutId);
-        
-        // For 'no-cors' mode, we can't read the response, so we must assume success
-        if (response.type === 'opaque') {
-            return { success: true };
-        }
-        
-        // This part is for 'cors' mode, which we've now bypassed.
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const result = await response.json();
-        isOnline = true;
-        return result;
-        
-    } catch (error) {
-        clearTimeout(timeoutId);
-        
-        // Strategy 2: Try with script injection (JSONP-like)
-        if (method === 'GET') {
-            try {
-                return await makeJsonpRequest(data);
-            } catch (jsonpError) {
-                console.warn('JSONP fallback failed:', jsonpError);
-            }
-        }
-        
-        isOnline = false;
-        throw error;
-    }
-}
-
-/**
- * JSONP-like request using script injection
- */
-function makeJsonpRequest(params = {}) {
-    return new Promise((resolve, reject) => {
-        const callbackName = 'callback_' + Date.now();
-        const script = document.createElement('script');
-        const url = new URL(APPS_SCRIPT_URL);
-        
-        // Add parameters
-        Object.keys(params).forEach(key => {
-            url.searchParams.append(key, params[key]);
-        });
-        url.searchParams.append('callback', callbackName);
-        
-        // Set up callback
-        window[callbackName] = function(data) {
-            document.head.removeChild(script);
-            delete window[callbackName];
-            resolve(data);
-        };
-        
-        // Set up error handling
-        script.onerror = function() {
-            document.head.removeChild(script);
-            delete window[callbackName];
-            reject(new Error('JSONP request failed'));
-        };
-        
-        script.src = url.toString();
-        document.head.appendChild(script);
-        
-        // Timeout
-        setTimeout(() => {
-            if (window[callbackName]) {
-                document.head.removeChild(script);
-                delete window[callbackName];
-                reject(new Error('JSONP request timeout'));
-            }
-        }, REQUEST_TIMEOUT);
-    });
-}
-
-/**
- * Creates a new spreadsheet
- */
-async function createUserSpreadsheet() {
-    try {
-        console.log('Creating new spreadsheet...');
-        
-        const result = await makeAppsScriptRequest('POST', {
-            action: 'createSpreadsheet'
-        });
-        
-        if (result.success && result.spreadsheetId) {
-            spreadsheetId = result.spreadsheetId;
-            console.log('Spreadsheet created:', spreadsheetId);
-            saveToLocalStorage();
-            return spreadsheetId;
-        } else {
-            throw new Error(result.error || 'Failed to create spreadsheet');
-        }
-        
-    } catch (error) {
-        console.error('Error creating spreadsheet:', error);
-        throw error;
-    }
-}
-
-/**
- * Saves data to Google Sheets
- */
-async function saveDataToSheets() {
-    if (!spreadsheetId || !isOnline) {
-        return false;
-    }
-    
-    try {
-        console.log('Saving to Google Sheets...');
-        
-        const dataToSave = {
-            userSelections: state.userSelections,
-            settings: state.settings,
-            allPlans: state.allPlans,
-            activePlanId: state.activePlanId,
-            workoutHistory: state.workoutHistory,
-            personalRecords: state.personalRecords,
-            savedTemplates: state.savedTemplates,
-            currentView: state.currentView,
-            isWorkoutInProgress: state.workoutTimer.isWorkoutInProgress,
-        };
-        
-        const result = await makeAppsScriptRequest('POST', {
-            action: 'saveData',
-            spreadsheetId: spreadsheetId,
-            data: dataToSave
-        });
-        
-        if (result.success) {
-            state.lastSyncTime = result.timestamp || new Date().toISOString();
-            console.log('Data synced successfully');
-            return true;
-        } else {
-            throw new Error(result.error || 'Save failed');
-        }
-        
-    } catch (error) {
-        console.error('Error saving to Google Sheets:', error);
-        return false;
-    }
-}
-
-/**
- * Loads data from Google Sheets
- */
-async function loadDataFromSheets() {
-    if (!spreadsheetId || !isOnline) {
-        return null;
-    }
-    
-    try {
-        console.log('Loading from Google Sheets...');
-        
-        const result = await makeAppsScriptRequest('GET', {
-            action: 'loadData',
-            spreadsheetId: spreadsheetId
-        });
-        
-        if (result.error) {
-            throw new Error(result.error);
-        }
-        
-        if (result.UserSelections || Object.keys(result).length > 0) {
-            console.log('Data loaded from Google Sheets');
-            return result;
-        }
-        
-        return null;
-        
-    } catch (error) {
-        console.error('Error loading from Google Sheets:', error);
-        return null;
     }
 }
 
@@ -346,6 +385,7 @@ function startPeriodicSync() {
     
     syncIntervalId = setInterval(async () => {
         if (isOnline && spreadsheetId) {
+            console.log('Performing periodic sync...');
             await syncData();
         }
     }, SYNC_INTERVAL);
@@ -355,18 +395,6 @@ function stopPeriodicSync() {
     if (syncIntervalId) {
         clearInterval(syncIntervalId);
         syncIntervalId = null;
-    }
-}
-
-/**
- * Connection test
- */
-async function testConnection() {
-    try {
-        await makeAppsScriptRequest('GET');
-        return true;
-    } catch (error) {
-        return false;
     }
 }
 
@@ -412,6 +440,25 @@ async function initializeDataService() {
         if (localData) {
             spreadsheetId = localData.spreadsheetId;
             applyDataToState(localData);
+            console.log('Local data loaded, spreadsheetId:', spreadsheetId);
+        }
+        
+        // Test connection first
+        const connectionWorks = await testConnection();
+        console.log('Connection test result:', connectionWorks);
+        
+        if (!connectionWorks) {
+            console.log('Cannot connect to Google Apps Script - running in offline mode');
+            if (!localData) {
+                applyDataToState(createDefaultUserData());
+            }
+            showModal(
+                'Offline Mode', 
+                'Could not connect to Google Sheets. Running in offline mode - your data will be saved locally.',
+                [{ text: 'OK', class: 'secondary-button' }]
+            );
+            state.isDataLoaded = true;
+            return false;
         }
         
         // Handle new users
@@ -419,27 +466,20 @@ async function initializeDataService() {
             const defaultData = createDefaultUserData();
             applyDataToState(defaultData);
             
-            if (await testConnection()) {
-                const shouldConnect = await askUserToConnectGoogleSheets();
-                if (shouldConnect) {
-                    try {
-                        await createUserSpreadsheet();
-                        await syncData();
-                    } catch (error) {
-                        console.error('Failed to set up Google Sheets:', error);
-                        showModal(
-                            'Connection Issue', 
-                            'Could not connect to Google Sheets. Your data will be saved locally.',
-                            [{ text: 'OK', class: 'secondary-button' }]
-                        );
-                    }
+            const shouldConnect = await askUserToConnectGoogleSheets();
+            if (shouldConnect) {
+                try {
+                    await createUserSpreadsheet();
+                    await syncData();
+                    console.log('Successfully set up Google Sheets integration');
+                } catch (error) {
+                    console.error('Failed to set up Google Sheets:', error);
+                    showModal(
+                        'Connection Issue', 
+                        `Could not connect to Google Sheets: ${error.message}. Your data will be saved locally.`,
+                        [{ text: 'OK', class: 'secondary-button' }]
+                    );
                 }
-            } else {
-                showModal(
-                    'Offline Mode', 
-                    'Running in offline mode. Data will be saved locally.',
-                    [{ text: 'OK', class: 'secondary-button' }]
-                );
             }
         } else {
             // Existing user - try to sync
@@ -450,12 +490,15 @@ async function initializeDataService() {
                     const sheetsTime = sheetsData.Timestamp;
                     
                     if (!localTime || new Date(sheetsTime) > new Date(localTime)) {
+                        console.log('Using newer data from Google Sheets');
                         applyDataToState(sheetsData);
                         saveToLocalStorage();
+                    } else {
+                        console.log('Local data is newer, keeping local data');
                     }
                 }
             } catch (error) {
-                console.log('Could not sync - using local data');
+                console.log('Could not sync with Google Sheets - using local data:', error.message);
             }
         }
         
@@ -515,5 +558,11 @@ export async function loadExercises() {
 
 // --- EVENT LISTENERS ---
 window.addEventListener('beforeunload', () => syncData());
-window.addEventListener('online', () => { isOnline = true; });
-window.addEventListener('offline', () => { isOnline = false; });
+window.addEventListener('online', () => { 
+    isOnline = true; 
+    console.log('Back online - will attempt to sync on next operation');
+});
+window.addEventListener('offline', () => { 
+    isOnline = false; 
+    console.log('Gone offline - using local storage only');
+});
