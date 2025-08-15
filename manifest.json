@@ -1,0 +1,9 @@
+{
+  "name": "Progression Workout Tracker",
+  "short_name": "Progression",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#FF7A00",
+  "description": "A modern, offline-first workout tracker to help you build muscle and strength."
+}
