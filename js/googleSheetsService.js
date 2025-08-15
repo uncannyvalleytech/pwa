@@ -12,6 +12,7 @@ import { APPS_SCRIPT_URL } from './env.js';
 const LOCAL_STORAGE_KEY = 'progressionAppState';
 const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const REQUEST_TIMEOUT = 15000; // 15 seconds
+const REDIRECT_URI = window.location.origin + window.location.pathname;
 
 // --- GLOBAL VARIABLES ---
 let syncIntervalId = null;
@@ -44,10 +45,12 @@ function createDefaultUserData() {
         workoutHistory: [],
         personalRecords: [],
         savedTemplates: [],
+        dailyCheckinHistory: [],
         currentView: { week: 1, day: 1 },
         isWorkoutInProgress: false,
         lastSyncTime: null,
         spreadsheetId: null,
+        accessToken: null, // New access token field
     };
 }
 
@@ -69,6 +72,7 @@ function applyDataToState(data) {
         state.personalRecords = data.PersonalRecords || [];
         state.workoutTimer.isWorkoutInProgress = data.IsWorkoutInProgress === true || data.IsWorkoutInProgress === 'true';
         state.lastSyncTime = data.Timestamp || null;
+        spreadsheetId = data.SpreadsheetId || null; // Ensure spreadsheetId is updated
     } else {
         // Handle local storage format
         state.userSelections = { ...state.userSelections, ...data.userSelections };
@@ -518,7 +522,33 @@ export async function loadExercises() {
     }
 }
 
+export function connectToUserAccount() {
+    showModal(
+        'Connect Google Account',
+        `<p>To export your data to your own Google Sheet, you need to grant the app permission to create and edit files in your Google Drive.</p>
+         <p>This will redirect you to a Google authentication page. All your data will remain in your own account.</p>`,
+        [
+            {
+                text: 'Proceed to Google',
+                class: 'cta-button',
+                action: () => {
+                    window.location.href = googleAuthUrl;
+                }
+            },
+            {
+                text: 'Cancel',
+                class: 'secondary-button',
+                action: closeModal
+            }
+        ]
+    );
+}
+
 // --- EVENT LISTENERS ---
 window.addEventListener('beforeunload', () => syncData());
 window.addEventListener('online', () => { isOnline = true; });
 window.addEventListener('offline', () => { isOnline = false; });
+
+const url = new URL(APPS_SCRIPT_URL);
+const scriptId = url.pathname.split('/')[3];
+const googleAuthUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${scriptId}.apps.googleusercontent.com&redirect_uri=${REDIRECT_URI}&response_type=token&scope=https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file`;
