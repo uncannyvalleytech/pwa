@@ -95,36 +95,25 @@ async function makeAppsScriptRequest(method, data = null) {
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
     
     try {
-        // Strategy 1: Standard fetch
-        let response;
-        if (method === 'GET') {
-            const url = data ? `${APPS_SCRIPT_URL}?${new URLSearchParams(data)}` : APPS_SCRIPT_URL;
-            response = await fetch(url, {
-                method: 'GET',
-                signal: controller.signal,
-                mode: 'no-cors' // This prevents CORS preflight
-            });
-        } else {
-            // Updated POST request to also use 'no-cors' to avoid preflight issues
-            const url = `${APPS_SCRIPT_URL}?${new URLSearchParams(data)}`;
-            response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-                signal: controller.signal,
-                mode: 'no-cors'
-            });
-        }
+        // Updated logic to use a simple GET request for all calls,
+        // which avoids the CORS preflight issue. Data is sent via query parameters.
+        const queryParams = new URLSearchParams(data);
+        const url = `${APPS_SCRIPT_URL}?${queryParams.toString()}`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            signal: controller.signal,
+            mode: 'no-cors' // Use 'no-cors' for all requests to avoid preflight
+        });
         
         clearTimeout(timeoutId);
         
-        // For no-cors mode, we can't read the response. The user will have to trust that the action worked.
+        // For 'no-cors' mode, we can't read the response, so we must assume success
         if (response.type === 'opaque') {
             return { success: true };
         }
         
+        // This part is for 'cors' mode, which we've now bypassed.
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -520,9 +509,6 @@ export async function loadExercises() {
         );
     }
 }
-
-// Removed the flawed connectToUserAccount function
-// The logic to prompt the user is now back in initializeDataService
 
 // --- EVENT LISTENERS ---
 window.addEventListener('beforeunload', () => syncData());
