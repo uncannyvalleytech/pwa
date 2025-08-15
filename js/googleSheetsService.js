@@ -541,6 +541,33 @@ export function handleAuthentication(onAuthenticated) {
     });
 }
 
+export async function forceInitializeGoogleSheets() {
+    console.log('Force initializing Google Sheets connection...');
+    
+    const connectionWorks = await testConnection();
+    if (!connectionWorks) {
+        throw new Error('Cannot connect to Google Apps Script. Please check your internet connection and try again.');
+    }
+    
+    if (!spreadsheetId) {
+        console.log('No existing spreadsheet - creating new one...');
+        await createUserSpreadsheet();
+        await syncData();
+        console.log('Google Sheets integration set up successfully');
+    } else {
+        console.log('Using existing spreadsheet:', spreadsheetId);
+        // Try to sync existing data
+        try {
+            await syncData();
+            console.log('Synced with existing Google Sheets');
+        } catch (error) {
+            console.warn('Could not sync with existing sheets, but connection works:', error.message);
+        }
+    }
+    
+    return true;
+}
+
 export async function loadExercises() {
     try {
         const response = await fetch('exercises.json');
