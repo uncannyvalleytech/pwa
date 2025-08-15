@@ -1,0 +1,503 @@
+/* ===========================
+  ROOT VARIABLES & GLOBAL STYLES
+=========================== */
+:root {
+  /* Charcoal + Electric Blue Palette Tokens */
+  
+  /* Surfaces */
+  --color-surface-primary: #1a202c;
+  --color-surface-secondary: #2d3748;
+  --color-surface-tertiary: #4a5568;
+
+  /* Text & Icons */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e2e8f0;
+  --color-text-disabled: #4a5568;
+
+  /* Accent & State */
+  --color-accent-primary: #00bfff;
+  --color-accent-secondary: #33ccff;
+  --color-state-success: #48bb78;
+  --color-state-warning: #ed8936;
+  --color-state-error: #f56565;
+
+  /* Borders & Dividers */
+  --color-border-primary: #4a5568;
+  
+  /* Font */
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body[data-theme="light"] {
+  --color-surface-primary: #f7fafc;
+  --color-surface-secondary: #ffffff;
+  --color-surface-tertiary: #edf2f7;
+  --color-text-primary: #1a202c;
+  --color-text-secondary: #4a5568;
+  --color-text-disabled: #e2e8f0;
+  --color-border-primary: #e2e8f0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-family); background-color: var(--color-surface-primary); color: var(--color-text-primary); line-height: 1.6; transition: background-color 0.3s ease, color 0.3s ease; }
+/* ===========================
+  CORE FUNCTIONAL STYLES
+=========================== */
+.hidden { display: none !important; }
+.step { display: none; text-align: center; }
+.step.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+
+.step.fade-out {
+    animation: fadeOut 0.4s ease-in-out;
+}
+
+.view {
+    animation: fadeIn 0.4s ease-in-out;
+}
+.view.fade-out {
+    animation: fadeOut 0.4s ease-in-out;
+}
+
+/* ===========================
+  LAYOUT & CONTAINER
+=========================== */
+main { max-width: 800px; margin: 0 auto; }
+.container, #daily-workout-view, #performance-summary-view, #settings-view, #workout-summary-view { padding: 2rem; position: relative; }
+#daily-workout-view { padding-bottom: 100px; }
+h2, h3 { margin-bottom: 1rem; font-weight: 600; }
+p, .placeholder-text { margin-bottom: 1.5rem; color: var(--color-text-secondary); }
+/* ===========================
+  HOME SCREEN & ONBOARDING STYLES
+=========================== */
+#onboarding-container, #home-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 100vh; }
+.main-title { font-size: 2.5rem; font-weight: 700; letter-spacing: 2px; color: var(--color-accent-primary); }
+.divider { height: 2px; width: 60px; background: var(--color-accent-primary); margin: 1rem auto; }
+.tagline { font-size: 1rem; color: var(--color-text-secondary); margin-bottom: 2rem; }
+.home-nav-buttons { display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem; width: 100%; max-width: 400px; }
+.home-nav-btn { text-align: left; width: 100%; }
+.home-nav-btn .hub-option-text h3 { font-size: 1.2rem; }
+.active-plan-display { margin-top: 2rem; color: var(--color-text-secondary); font-style: italic; }
+.home-icon-btn { position: absolute; bottom: 2rem; right: 2rem; background: var(--color-surface-secondary); border: 1px solid var(--color-border-primary); border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease; }
+.home-icon-btn svg { stroke: var(--color-text-secondary); transition: all 0.2s ease; }
+.home-icon-btn:hover { background: var(--color-accent-primary); border-color: var(--color-accent-primary); transform: translateY(-2px); }
+.home-icon-btn:hover svg { stroke: #fff; }
+
+.progress-bar { width: 100%; height: 8px; background-color: var(--color-surface-secondary); border-radius: 4px; margin-bottom: 2rem; overflow: hidden; }
+.progress { width: 0%; height: 100%; background-color: var(--color-accent-primary); border-radius: 4px; transition: width 0.5s ease-in-out; }
+.splash-bar { max-width: 300px; margin: 2rem auto 0 auto; }
+
+.card-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+.goal-card { background-color: var(--color-surface-secondary); border: 2px solid var(--color-border-primary); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s ease-out; }
+.goal-card:hover { transform: translateY(-5px); border-color: var(--color-accent-secondary); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+.goal-card.active { border-color: var(--color-accent-primary); box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); transform: scale(1.05); }
+.goal-card .icon { display: flex; justify-content: center; align-items: center; height: 40px; margin: 0 auto 0.5rem auto; }
+.goal-card .icon img { height: 100%; width: auto; }
+.goal-card h3 { margin-bottom: 0.25rem; font-size: 1.1rem; color: var(--color-text-primary); }
+.goal-card p { font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0; }
+.settings-card-group { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.settings-card-group .goal-card { padding: 1rem 0.5rem; min-height: 110px; display: flex; flex-direction: column; justify-content: center; }
+.settings-card-group .goal-card h3 { font-size: 0.9rem; margin-bottom: 0; }
+/* ===========================
+  DAILY WORKOUT VIEW STYLES
+=========================== */
+.workout-header { text-align: center; margin-bottom: 2.5rem; border-bottom: 1px solid var(--color-border-primary); padding-bottom: 1.5rem; position: relative; }
+.workout-header h2 { margin-bottom: 0.25rem; }
+.workout-header p { margin-bottom: 0; color: var(--color-text-secondary); }
+.exercise-card { background-color: var(--color-surface-secondary); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; transition: all 0.2s ease-out;}
+.exercise-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.exercise-card.stalled { border-left: 4px solid var(--color-state-warning); }
+.exercise-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.exercise-title-group { display: flex; align-items: center; gap: 0.75rem; }
+.exercise-title-group h3 { margin: 0; font-size: 1.5rem; }
+.stall-indicator { cursor: help; }
+.swap-exercise-btn, .history-btn, .note-btn { background: none; border: none; cursor: pointer; color: var(--color-text-secondary); padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; border-radius: 50%; }
+.swap-exercise-btn:hover, .history-btn:hover, .note-btn:hover { color: var(--color-accent-secondary); background-color: var(--color-surface-tertiary);}
+.swap-exercise-btn svg, .history-btn svg, .note-btn svg { pointer-events: none; }
+.note-btn.has-note { color: var(--color-accent-primary); }
+.sets-container .set-row { display: flex; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border-primary); transition: background-color 0.2s ease-in-out; }
+.sets-container .set-row:last-child { border-bottom: none; }
+.sets-container .set-row.active-set { background-color: rgba(0, 191, 255, 0.1); }
+.set-number { flex-basis: 50px; font-weight: 600; color: var(--color-text-secondary); text-align: center; }
+.set-inputs-wrapper { flex: 1; position: relative; }
+.set-inputs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 100%; }
+.set-row.header .set-inputs span { color: var(--color-text-secondary); font-size: 0.9rem; text-align: center; }
+.set-inputs input { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--color-border-primary); background-color: var(--color-surface-tertiary); color: var(--color-text-primary); font-family: var(--font-family); text-align: center; font-size: 1rem; transition: all 0.2s ease; background-repeat: no-repeat; background-position: center right 1rem; background-size: 1.2em; }
+.set-inputs input.valid { border-color: var(--color-state-success); background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2348bb78' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e"); }
+.set-inputs input.invalid { border-color: var(--color-state-error); background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23f56565'%3e%3cpath d='M2 2l8 8M10 2l-8 8' stroke-width='2'/%3e%3c/svg%3e"); }
+.add-set-btn { background: none; border: 1px dashed var(--color-border-primary); color: var(--color-text-secondary); width: 100%; padding: 0.75rem; margin-top: 1rem; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
+.add-set-btn:hover { background-color: var(--color-border-primary); color: var(--color-text-primary); transform: translateY(-2px); }
+.workout-actions { margin-top: 2rem; text-align: center; }
+
+/* Styles for Notes and History */
+.set-actions {
+    flex-basis: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.modal-textarea {
+    width: 100%;
+    min-height: 100px;
+    margin-top: 1rem;
+    padding: 0.75rem;
+}
+.history-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border-primary);
+    font-size: 0.9rem;
+}
+.history-item:last-child {
+    border-bottom: none;
+}
+.history-date {
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+.history-performance {
+    color: var(--color-text-secondary);
+}
+.history-note {
+    font-style: italic;
+    color: var(--color-accent-secondary);
+    margin-top: 0.25rem;
+}
+
+/* ===========================
+  COMPONENTS (Buttons, Modal)
+=========================== */
+.cta-button, .secondary-button { border: none; border-radius: 8px; padding: 0.8rem 2rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.cta-button { background-color: var(--color-accent-primary); color: #fff; }
+.cta-button:hover { background-color: var(--color-accent-secondary); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 191, 255, 0.2); }
+.cta-button:active, .secondary-button:active { transform: scale(0.98); }
+.button-group { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; }
+.secondary-button { background-color: transparent; border: 1px solid var(--color-border-primary); color: var(--color-text-secondary); font-weight: 600; }
+.secondary-button:hover { background-color: var(--color-surface-tertiary); color: var(--color-text-primary); transform: translateY(-2px); }
+.back-btn { position: absolute; top: 1.5rem; left: 1.5rem; background: var(--color-surface-secondary); border: 1px solid var(--color-border-primary); color: var(--color-text-secondary); border-radius: 50%; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.back-btn svg { stroke: var(--color-text-secondary); transition: all 0.2s ease; }
+.back-btn:hover { background-color: var(--color-accent-primary); border-color: var(--color-accent-primary); transform: translateY(-2px); }
+.back-btn:hover svg { stroke: #fff; }
+.modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.modal.active { opacity: 1; pointer-events: auto; }
+.modal-content { background-color: var(--color-surface-secondary); padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.4); text-align: center; transform: scale(0.95); transition: transform 0.3s ease; }
+.modal.active .modal-content { transform: scale(1); }
+.modal-content .close-btn { position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; color: var(--color-text-secondary); cursor: pointer; transition: color 0.2s ease; }
+.modal-content .close-btn:hover { color: var(--color-text-primary); }
+.modal .card-group { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+.modal-body h2 { margin-top: 0.5rem; }
+.modal-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; }
+.modal-actions.vertical { flex-direction: column; }
+.modal-actions .cta-button, .modal-actions .secondary-button { width: 100%; padding: 1rem; margin: 0; }
+.modal-input { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--color-border-primary); background-color: var(--color-surface-tertiary); color: var(--color-text-primary); font-family: var(--font-family); text-align: center; font-size: 1rem; transition: all 0.2s ease; margin-top: 1rem; margin-bottom: 1rem; }
+/* ===========================
+  TEMPLATE PORTAL & TEMPLATE STYLES
+=========================== */
+.hub-option { display: flex; align-items: center; background-color: var(--color-surface-secondary); border: 1px solid var(--color-border-primary); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; cursor: pointer; transition: all 0.2s ease-out; font-family: var(--font-family); color: var(--color-text-primary); }
+.hub-option:hover { border-color: var(--color-accent-primary); transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+.hub-option.active, .hub-option:active { border-color: var(--color-accent-primary); background-color: var(--color-surface-tertiary); box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); transform: scale(0.98); }
+.hub-option-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background-color: var(--color-surface-primary); display: flex; justify-content: center; align-items: center; margin-right: 1.5rem; }
+.hub-option-icon img { height: 28px; width: 28px; }
+.hub-option-text h3 { margin: 0 0 0.25rem 0; color: var(--color-text-primary); }
+.hub-option-text p { margin: 0; font-size: 0.9rem; color: var(--color-text-secondary); }
+.hub-actions { margin-top: 2rem; text-align: center; }
+.header-icon-btn { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--color-surface-secondary); border: 1px solid var(--color-border-primary); color: var(--color-text-secondary); border-radius: 50%; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.header-icon-btn:hover { background-color: var(--color-accent-primary); border-color: var(--color-accent-primary); color: #fff; transform: translateY(-2px); }
+.tab-container { display: flex; border-bottom: 1px solid var(--color-border-primary); margin-bottom: 2rem; }
+.tab-btn { flex: 1; padding: 1rem; background: none; border: none; color: var(--color-text-secondary); cursor: pointer; transition: all 0.2s ease; border-bottom: 2px solid transparent; }
+.tab-btn.active { color: var(--color-accent-primary); border-bottom-color: var(--color-accent-primary); font-weight: 600; }
+/* ===========================
+  CUSTOM PLAN WIZARD STYLES
+=========================== */
+#custom-wizard-content .settings-section { background-color: transparent; border: none; padding: 0; margin-bottom: 3rem; }
+#custom-wizard-content .settings-section h3 { text-align: center; }
+#custom-wizard-content .card-group { gap: 0.75rem; }
+#custom-wizard-content .goal-card { padding: 1rem 0.5rem; }
+#custom-wizard-content .wizard-actions { margin-top: 2rem; text-align: center; }
+/* ===========================
+  WORKOUT BUILDER STYLES
+=========================== */
+.schedule-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
+.day-card { background-color: var(--color-surface-secondary); border-radius: 12px; padding: 1.5rem; transition: background-color 0.3s ease; }
+.day-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border-primary); padding-bottom: 1rem; margin-bottom: 1rem; }
+select.builder-select { background-color: var(--color-surface-tertiary); color: var(--color-text-primary); border: 1px solid var(--color-border-primary); border-radius: 8px; padding: 0.5rem 1rem; font-family: var(--font-family); font-size: 1rem; transition: all 0.2s ease; }
+.builder-input { background-color: var(--color-surface-tertiary); color: var(--color-text-primary); border: 1px solid var(--color-border-primary); border-radius: 8px; padding: 0.5rem 1rem; font-family: var(--font-family); font-size: 1rem; transition: all 0.2s ease; width: 100%; }
+.day-label-input { font-size: 1.2rem; font-weight: 600; }
+.delete-btn { background: none; border: none; color: var(--color-text-secondary); cursor: pointer; transition: color 0.2s ease; padding: 0.5rem; }
+.delete-btn svg { stroke: var(--color-text-secondary); transition: stroke 0.2s ease; pointer-events: none; }
+.delete-btn:hover svg { stroke: var(--color-accent-primary); }
+.muscle-group-block { border: 1px solid var(--color-border-primary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+.muscle-group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.muscle-group-selectors { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: center; }
+.exercise-selection-group { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+.add-muscle-group-btn { width: 100%; margin-top: 1rem; }
+.builder-actions { margin-top: 2rem; display: flex; justify-content: center; gap: 1rem; }
+.focus-buttons { display: flex; gap: 0.5rem; }
+.focus-btn { flex: 1; background-color: var(--color-surface-tertiary); border: 1px solid var(--color-border-primary); color: var(--color-text-secondary); padding: 0.5rem; border-radius: 8px; cursor: pointer; font-family: var(--font-family); font-size: 0.9rem; transition: all 0.2s ease; }
+.focus-btn:hover { background-color: var(--color-border-primary); }
+.focus-btn.active { background-color: var(--color-accent-primary); border-color: var(--color-accent-primary); color: #fff; font-weight: 600; }
+/* ===========================
+  PERFORMANCE SUMMARY STYLES
+=========================== */
+.summary-section { background-color: var(--color-surface-secondary); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+#workout-history-list, #trophy-case-list { max-height: 300px; overflow-y: auto; padding-right: 1rem; }
+.summary-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--color-border-primary); }
+.summary-item:last-child { border-bottom: none; }
+.summary-item h4 { margin: 0; font-size: 1.1rem; }
+.summary-item p { margin: 0; color: var(--color-text-secondary); }
+#exercise-tracker-select { width: 100%; margin-bottom: 1.5rem; }
+
+.chart-toggle-switch {
+    margin-bottom: 1rem;
+}
+.chart-container { position: relative; height: 300px; width: 100%; }
+.chart-container.hidden { display: none; }
+
+#trophy-case-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.pr-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-surface-tertiary);
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    border-left: 4px solid var(--color-state-success);
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.pr-exercise-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--color-text-primary);
+    flex-grow: 1;
+}
+.pr-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    gap: 0.1rem;
+}
+.pr-lift {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--color-accent-primary);
+}
+.pr-e1rm {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+.pr-date {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    min-width: 80px;
+    text-align: right;
+}
+
+#consistency-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; text-align: center; }
+.calendar-header { grid-column: 1 / -1; font-weight: 600; margin-bottom: 1rem; color: var(--color-accent-secondary); }
+.calendar-day-name { font-size: 0.8rem; color: var(--color-text-secondary); }
+.calendar-day { display: flex; justify-content: center; align-items: center; aspect-ratio: 1 / 1; border-radius: 50%; }
+.calendar-day.completed { background-color: var(--color-accent-primary); color: #fff; }
+/* ===========================
+  SETTINGS VIEW STYLES
+=========================== */
+.settings-section { background-color: var(--color-surface-secondary); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+.settings-section:last-child { margin-bottom: 0; }
+.settings-section h3 { margin-bottom: 1.5rem; border-bottom: 1px solid var(--color-border-primary); padding-bottom: 1rem; }
+.settings-label { display: block; color: var(--color-text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem; margin-top: 1.5rem; }
+.toggle-switch { display: flex; background-color: var(--color-surface-tertiary); border-radius: 8px; padding: 4px; border: 1px solid var(--color-border-primary); }
+.toggle-btn { flex: 1; background-color: transparent; border: none; color: var(--color-text-secondary); padding: 0.75rem 0.5rem; border-radius: 6px; cursor: pointer; font-family: var(--font-family); font-size: 0.9rem; font-weight: 500; transition: all 0.2s ease; text-align: center; }
+.toggle-btn:hover { background-color: var(--color-border-primary); color: var(--color-text-primary); }
+.toggle-btn.active { background-color: var(--color-accent-primary); color: #fff; font-weight: 600; box-shadow: 0 2px 8px rgba(0, 191, 255, 0.3); }
+#plan-management-list .plan-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--color-border-primary); }
+#plan-management-list .plan-item:last-child { border-bottom: none; }
+.plan-name-text { cursor: pointer; transition: color 0.2s ease; }
+.plan-name-text:hover { color: var(--color-accent-secondary); }
+.plan-actions { display: flex; gap: 0.5rem; }
+.plan-btn { font-size: 0.9rem; padding: 0.6rem 1rem; border-radius: 6px; }
+
+input:focus, select:focus { outline: none; border-color: var(--color-accent-primary); box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.3); }
+/* ===========================
+  ANIMATIONS & RESPONSIVENESS
+=========================== */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+@media (max-width: 768px) {
+  .container, #daily-workout-view, #performance-summary-view, #settings-view, #workout-summary-view {
+    padding: 1rem;
+  }
+
+  .main-title {
+    font-size: 2rem;
+  }
+
+  .workout-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .exercise-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .timer-container {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+
+  .rest-timer-section {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid var(--color-border-primary);
+    padding-top: 1rem;
+  }
+
+  .timer-controls {
+    position: static;
+    transform: none;
+    flex-direction: row;
+    justify-content: center;
+    margin-top: 0.75rem;
+  }
+
+  .back-btn {
+    top: 1rem;
+    left: 1rem;
+    width: 40px;
+    height: 40px;
+  }
+
+  .home-icon-btn {
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+  }
+
+  .summary-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-item h4 {
+    font-size: 1rem;
+  }
+
+  .summary-item p {
+    font-size: 0.85rem;
+  }
+
+  .settings-section .card-group {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .settings-section h3 {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .settings-label {
+    margin-top: 1rem;
+  }
+}
+
+/* ===========================
+  NEW STYLES FOR CELEBRATION
+=========================== */
+#confetti-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Allows clicks to pass through */
+  z-index: 9999;
+}
+
+.stat-card {
+  position: relative; /* Needed for badge positioning */
+}
+
+.pr-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background-color: var(--color-state-success);
+  color: #fff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* ===========================
+  NEW TOAST NOTIFICATION STYLES
+=========================== */
+.toast {
+  visibility: hidden;
+  min-width: 250px;
+  background-color: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+  text-align: center;
+  border-radius: 8px;
+  padding: 1rem;
+  position: fixed;
+  z-index: 1001;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  font-size: 1rem;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  opacity: 0;
+  transition: visibility 0.5s, opacity 0.5s, bottom 0.5s;
+}
+
+.toast.show {
+  visibility: visible;
+  opacity: 1;
+  bottom: 50px;
+}
+
+.toast.success {
+  background-color: var(--color-state-success);
+  color: #fff;
+}
+.toast.warning {
+  background-color: var(--color-state-warning);
+  color: #fff;
+}
+.toast.error {
+  background-color: var(--color-state-error);
+  color: #fff;
+}
+.toast.info {
+  background-color: var(--color-accent-primary);
+  color: #fff;
+}
+
+/* ===========================
+  NEW SUMMARY COMPARISON STYLES
+=========================== */
+.comparison {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.comparison.positive {
+  color: var(--color-state-success);
+}
+.comparison.negative {
+  color: var(--color-state-error);
+}
+.comparison.neutral {
+  color: var(--color-text-secondary);
+}
