@@ -760,7 +760,9 @@ export function initEventListeners() {
             selectAlternative: () => selectAlternative(dataset.newExerciseName, dataset.exerciseIndex),
             openExerciseNotes: () => openExerciseNotes(dataset.exerciseIndex),
             showHistory: () => showHistory(dataset.exerciseId),
-            connectGoogleAccount: () => googleSheets.connectToUserAccount()
+            // The logic to connect to Google Sheets has been moved back to the initial prompt.
+            // This button's action is now redundant and can be removed.
+            // connectGoogleAccount: () => googleSheets.connectToUserAccount()
         };
 
         if (actions[action]) {
