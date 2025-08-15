@@ -1,26 +1,16 @@
-// js/googleSheetsService.js - Fixed CORS Version
+// js/googleSheetsService.js - JSONP-Only Version (CORS Workaround)
 import { state } from './state.js';
 import { showModal, closeModal } from './ui.js';
 import { APPS_SCRIPT_URL } from './env.js';
 
-/**
- * @file This service handles data persistence using Google Apps Script
- * Fixed version with proper CORS handling
- */
-
-// --- CONFIGURATION ---
 const LOCAL_STORAGE_KEY = 'progressionAppState';
-const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
-const REQUEST_TIMEOUT = 15000; // 15 seconds
+const SYNC_INTERVAL = 5 * 60 * 1000;
+const REQUEST_TIMEOUT = 15000;
 
-// --- GLOBAL VARIABLES ---
 let syncIntervalId = null;
 let spreadsheetId = null;
 let isOnline = navigator.onLine;
 
-/**
- * Creates default user data
- */
 function createDefaultUserData() {
     return {
         userSelections: {
@@ -53,103 +43,40 @@ function createDefaultUserData() {
 }
 
 /**
- * Makes request to Apps Script with proper CORS handling
- */
-async function makeAppsScriptRequest(action, data = null) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-    
-    try {
-        let url, options;
-        
-        if (action === 'loadData' || action === 'testConnection') {
-            // GET requests - use query parameters
-            const params = new URLSearchParams({
-                action: action,
-                ...(data || {})
-            });
-            url = `${APPS_SCRIPT_URL}?${params.toString()}`;
-            options = {
-                method: 'GET',
-                signal: controller.signal,
-            };
-        } else {
-            // POST requests - send data in body as form data to avoid preflight
-            const formData = new FormData();
-            formData.append('action', action);
-            if (data) {
-                Object.keys(data).forEach(key => {
-                    formData.append(key, typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key]);
-                });
-            }
-            
-            url = APPS_SCRIPT_URL;
-            options = {
-                method: 'POST',
-                signal: controller.signal,
-                body: formData,
-            };
-        }
-        
-        console.log(`Making ${options.method} request to Apps Script:`, action);
-        
-        const response = await fetch(url, options);
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        isOnline = true;
-        
-        console.log('Apps Script response:', result);
-        return result;
-        
-    } catch (error) {
-        clearTimeout(timeoutId);
-        console.error('Apps Script request failed:', error);
-        
-        // For connection errors, try a simple JSONP fallback for GET requests
-        if (action === 'loadData' && !error.name === 'AbortError') {
-            try {
-                console.log('Trying JSONP fallback...');
-                return await makeJsonpRequest({ action, ...data });
-            } catch (jsonpError) {
-                console.warn('JSONP fallback also failed:', jsonpError);
-            }
-        }
-        
-        isOnline = false;
-        throw error;
-    }
-}
-
-/**
- * JSONP-like request using script injection (fallback for GET requests)
+ * JSONP request using script injection (works around CORS)
  */
 function makeJsonpRequest(params = {}) {
     return new Promise((resolve, reject) => {
-        const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const callbackName = 'progressionCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const script = document.createElement('script');
         const url = new URL(APPS_SCRIPT_URL);
         
-        // Add parameters
+        console.log('Making JSONP request with params:', params);
+        
+        // Add parameters to URL
         Object.keys(params).forEach(key => {
-            url.searchParams.append(key, typeof params[key] === 'object' ? JSON.stringify(params[key]) : params[key]);
+            let value = params[key];
+            if (typeof value === 'object' && value !== null) {
+                value = JSON.stringify(value);
+            }
+            url.searchParams.append(key, value);
         });
         url.searchParams.append('callback', callbackName);
         
+        console.log('JSONP URL:', url.toString());
+        
         // Set up callback
         window[callbackName] = function(data) {
+            console.log('JSONP response received:', data);
             cleanup();
             resolve(data);
         };
         
         // Set up error handling
         script.onerror = function() {
+            console.error('JSONP script error');
             cleanup();
-            reject(new Error('JSONP request failed'));
+            reject(new Error('JSONP request failed - check your Apps Script URL'));
         };
         
         function cleanup() {
@@ -165,8 +92,9 @@ function makeJsonpRequest(params = {}) {
         // Timeout
         setTimeout(() => {
             if (window[callbackName]) {
+                console.error('JSONP request timeout');
                 cleanup();
-                reject(new Error('JSONP request timeout'));
+                reject(new Error('Request timeout - Google Apps Script may be slow'));
             }
         }, REQUEST_TIMEOUT);
     });
@@ -177,8 +105,8 @@ function makeJsonpRequest(params = {}) {
  */
 async function testConnection() {
     try {
-        console.log('Testing connection to Apps Script...');
-        const result = await makeAppsScriptRequest('testConnection');
+        console.log('Testing connection to Apps Script via JSONP...');
+        const result = await makeJsonpRequest({ action: 'testConnection' });
         console.log('Connection test result:', result);
         return result && result.success !== false;
     } catch (error) {
@@ -192,9 +120,9 @@ async function testConnection() {
  */
 async function createUserSpreadsheet() {
     try {
-        console.log('Creating new spreadsheet...');
+        console.log('Creating new spreadsheet via JSONP...');
         
-        const result = await makeAppsScriptRequest('createSpreadsheet');
+        const result = await makeJsonpRequest({ action: 'createSpreadsheet' });
         
         if (result && result.success && result.spreadsheetId) {
             spreadsheetId = result.spreadsheetId;
@@ -212,7 +140,7 @@ async function createUserSpreadsheet() {
 }
 
 /**
- * Saves data to Google Sheets
+ * Saves data to Google Sheets via JSONP
  */
 async function saveDataToSheets() {
     if (!spreadsheetId || !isOnline) {
@@ -221,7 +149,7 @@ async function saveDataToSheets() {
     }
     
     try {
-        console.log('Saving data to Google Sheets...');
+        console.log('Saving data to Google Sheets via JSONP...');
         
         const dataToSave = {
             userSelections: state.userSelections,
@@ -235,7 +163,8 @@ async function saveDataToSheets() {
             isWorkoutInProgress: state.workoutTimer.isWorkoutInProgress,
         };
         
-        const result = await makeAppsScriptRequest('saveData', {
+        const result = await makeJsonpRequest({
+            action: 'saveData',
             spreadsheetId: spreadsheetId,
             data: dataToSave
         });
@@ -255,7 +184,7 @@ async function saveDataToSheets() {
 }
 
 /**
- * Loads data from Google Sheets
+ * Loads data from Google Sheets via JSONP
  */
 async function loadDataFromSheets() {
     if (!spreadsheetId || !isOnline) {
@@ -264,9 +193,10 @@ async function loadDataFromSheets() {
     }
     
     try {
-        console.log('Loading data from Google Sheets...');
+        console.log('Loading data from Google Sheets via JSONP...');
         
-        const result = await makeAppsScriptRequest('loadData', {
+        const result = await makeJsonpRequest({
+            action: 'loadData',
             spreadsheetId: spreadsheetId
         });
         
@@ -543,7 +473,7 @@ export async function forceInitializeGoogleSheets() {
     
     const connectionWorks = await testConnection();
     if (!connectionWorks) {
-        throw new Error('Cannot connect to Google Apps Script. Please check your internet connection and try again.');
+        throw new Error('Cannot connect to Google Apps Script. Please check your deployment URL and try again.');
     }
     
     if (!spreadsheetId) {
