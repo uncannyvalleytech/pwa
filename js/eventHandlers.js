@@ -1,4 +1,4 @@
-// js/eventHandlers.js - Updated for Google Sheets
+// js/eventHandlers.js - Fixed version with Connect to Google button
 import { state } from './state.js';
 import * as ui from './ui.js';
 import * as googleSheets from './googleSheetsService.js';
@@ -69,6 +69,40 @@ async function selectCard(element, field, value, shouldSave = false) {
 
     if (shouldSave) {
         await googleSheets.updateState('userSelections', state.userSelections);
+    }
+}
+
+async function connectToGoogleSheets() {
+    triggerHapticFeedback('medium');
+    
+    ui.showModal(
+        'Connecting to Google Sheets...',
+        'Setting up your Google Sheets integration. This may take a moment.',
+        []
+    );
+
+    try {
+        // Force initialization of the Google Sheets service
+        await googleSheets.forceInitializeGoogleSheets();
+        
+        ui.closeModal();
+        ui.showModal(
+            'Connected!',
+            'Successfully connected to Google Sheets. Your data will now be synced automatically.',
+            [{ text: 'OK', class: 'cta-button' }]
+        );
+        
+        // Refresh the settings view to update the UI
+        ui.renderSettings();
+        
+    } catch (error) {
+        console.error('Failed to connect to Google Sheets:', error);
+        ui.closeModal();
+        ui.showModal(
+            'Connection Failed',
+            `Could not connect to Google Sheets: ${error.message}. Please try again later.`,
+            [{ text: 'OK', class: 'secondary-button' }]
+        );
     }
 }
 
@@ -687,230 +721,4 @@ function selectAlternative(newExerciseName, exerciseIndex) {
             ...currentExercise, 
             name: newExerciseData.name, 
             muscle: newExerciseData.muscle, 
-            exerciseId: `ex_${newExerciseData.name.replace(/\s+/g, '_')}`, 
-            sets: [],
-            stallCount: 0,
-            note: `Swapped from ${currentExercise.name}.`
-        };
-        ui.renderDailyWorkout();
-        ui.closeModal();
-    }
-}
-
-// --- EVENT LISTENER INITIALIZATION ---
-
-export function initEventListeners() {
-    document.body.addEventListener('click', e => {
-        const target = e.target.closest('[data-action]');
-        if (!target) return;
-        
-        target.classList.add('pop-animation');
-        target.addEventListener('animationend', () => target.classList.remove('pop-animation'), { once: true });
-
-        const { action, ...dataset } = target.dataset;
-
-        const actions = {
-            nextOnboardingStep,
-            previousOnboardingStep,
-            selectOnboardingCard: () => selectOnboardingCard(target, dataset.field, dataset.value),
-            showView: () => {
-                if (state.currentViewName === 'workout' && dataset.viewName !== 'workout') {
-                    stopStopwatch();
-                    stopRestTimer();
-                }
-
-                if (dataset.viewName === 'workout' && state.workoutTimer.isWorkoutInProgress) {
-                    ui.showView('workout');
-                } else if (dataset.viewName === 'workout') {
-                    const workoutFound = findAndSetNextWorkout();
-                    if (workoutFound) ui.showDailyCheckinModal();
-                } else {
-                    ui.showView(dataset.viewName);
-                }
-            },
-            selectCard: () => selectCard(target, dataset.field, dataset.value, dataset.shouldSave === 'true'),
-            setTheme: () => setTheme(dataset.theme),
-            setUnits: () => setUnits(dataset.unit),
-            setProgressionModel: () => setProgressionModel(dataset.progression),
-            setWeightIncrement: () => setWeightIncrement(parseFloat(dataset.increment)),
-            setRestDuration: () => setRestDuration(parseInt(dataset.duration)),
-            setChartType: () => setChartType(dataset.chartType),
-            confirmDeletePlan: () => confirmDeletePlan(dataset.planId),
-            setActivePlan: () => setActivePlan(dataset.planId),
-            startPlanWorkout: () => startPlanWorkout(dataset.planId),
-            editPlan: () => editPlan(dataset.planId),
-            confirmCompleteWorkout,
-            closeModal: ui.closeModal,
-            startRestTimer,
-            stopRestTimer,
-            submitCheckin,
-            addSet: () => {
-                triggerHapticFeedback('light');
-                const { exerciseIndex } = dataset;
-                const activePlan = state.allPlans.find(p => p.id === state.activePlanId);
-                const workout = activePlan.weeks[state.currentView.week][state.currentView.day];
-                const exercise = workout.exercises[exerciseIndex];
-                if (!exercise.sets) exercise.sets = [];
-                const setIndex = exercise.sets.length;
-                const lastWeight = setIndex > 0 ? exercise.sets[setIndex - 1].weight : (exercise.targetLoad || '');
-                exercise.sets.push({ weight: lastWeight, reps: '', rir: '', rawInput: '' });
-                ui.renderDailyWorkout();
-            },
-            swapExercise: () => swapExercise(dataset.exerciseIndex),
-            selectAlternative: () => selectAlternative(dataset.newExerciseName, dataset.exerciseIndex),
-            openExerciseNotes: () => openExerciseNotes(dataset.exerciseIndex),
-            showHistory: () => showHistory(dataset.exerciseId),
-            // The logic to connect to Google Sheets has been moved back to the initial prompt.
-            // This button's action is now redundant and can be removed.
-            // connectGoogleAccount: () => googleSheets.connectToUserAccount()
-        };
-
-        if (actions[action]) {
-            actions[action]();
-        }
-    });
-
-    ui.elements.templatePortalView?.addEventListener('click', e => {
-        const hubOption = e.target.closest('.hub-option');
-        if (!hubOption) return;
-        const hubAction = hubOption.dataset.hubAction;
-        triggerHapticFeedback('medium');
-
-        if (hubAction === 'new') {
-            ui.showModal("Create New Plan?", 
-            "This will generate a new intelligent plan based on your current settings. Are you sure?",
-            [
-                { text: 'Cancel', class: 'secondary-button' },
-                { text: 'Yes, Create', class: 'cta-button', action: async () => {
-                    triggerHapticFeedback('success');
-                    const newMeso = workoutEngine.generateNewMesocycle(state.userSelections, state.exercises, 4);
-                    const newPlan = {
-                        id: `meso_${Date.now()}`,
-                        name: `Intelligent Plan - ${new Date().toLocaleDateString()}`,
-                        startDate: new Date().toISOString(),
-                        durationWeeks: 4,
-                        ...newMeso
-                    };
-                    state.allPlans.push(newPlan);
-                    state.activePlanId = newPlan.id;
-                    await googleSheets.saveFullState();
-                    ui.closeModal();
-                    ui.showView('settings');
-                }}
-            ]);
-        }
-        if (hubAction === 'manage') ui.showView('settings');
-        if (hubAction === 'premade' || hubAction === 'custom') ui.showModal('Coming Soon!', 'This feature is currently under development.');
-    });
-
-    // Debounced input event listener for real-time saving of workout progress.
-    let saveTimeout;
-    const saveDelay = 1000; // 1 second debounce
-    document.body.addEventListener('input', e => {
-        if (e.target.matches('.weight-input, .rep-rir-input')) {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                googleSheets.updateState('allPlans', state.allPlans);
-            }, saveDelay);
-        }
-    });
-
-    ui.elements.modal?.addEventListener('click', (e) => {
-        if (e.target.id === 'modal' || e.target.id === 'feedback-modal' || e.target.id === 'daily-checkin-modal') {
-            ui.closeModal();
-            ui.closeFeedbackModal();
-            ui.closeDailyCheckinModal();
-        }
-    });
-
-    ui.elements.workoutView?.addEventListener('input', (e) => {
-        if (e.target.matches('.weight-input, .rep-rir-input')) {
-            e.target.classList.remove('valid', 'invalid');
-            if (e.target.value.trim() !== '') {
-                const isValid = e.target.checkValidity();
-                e.target.classList.add(isValid ? 'valid' : 'invalid');
-            }
-            
-            const { exerciseIndex, setIndex } = e.target.dataset;
-            const activePlan = state.allPlans.find(p => p.id === state.activePlanId);
-            const workout = activePlan?.weeks[state.currentView.week][state.currentView.day];
-            if (!workout) return;
-            
-            const exercise = workout.exercises[exerciseIndex];
-            if (!exercise || !exercise.sets[setIndex]) return;
-            const set = exercise.sets[setIndex];
-
-            if (e.target.classList.contains('weight-input')) {
-                set.weight = parseFloat(e.target.value) || '';
-            } else if (e.target.classList.contains('rep-rir-input')) {
-                const value = e.target.value.toLowerCase();
-                set.rawInput = value;
-                const repMatch = value.match(/^(\d+)/);
-                const rirMatch = value.match(/r(\d+)/) || value.match(/(\d+)\s*rir/);
-                
-                set.reps = repMatch ? parseInt(repMatch[1]) : '';
-                set.rir = rirMatch ? parseInt(rirMatch[1]) : '';
-
-                if (set.weight && set.reps) {
-                    if(!state.restTimer.isRunning) startRestTimer();
-                    
-                    const recommendation = workoutEngine.generateIntraWorkoutRecommendation(set, exercise);
-                    ui.displayIntraWorkoutRecommendation(parseInt(exerciseIndex), parseInt(setIndex), recommendation);
-
-                    const isFinalSet = parseInt(setIndex) === exercise.targetSets - 1;
-                    if (isFinalSet) {
-                        setTimeout(() => triggerFeedbackModals(exercise, parseInt(exerciseIndex), workout), 500);
-                    }
-                }
-            }
-        }
-    });
-
-    ui.elements.workoutView?.addEventListener('focusin', (e) => {
-        if (e.target.matches('.weight-input, .rep-rir-input')) {
-            e.target.closest('.set-row').classList.add('active-set');
-        }
-    });
-
-    ui.elements.workoutView?.addEventListener('focusout', (e) => {
-        if (e.target.matches('.weight-input, .rep-rir-input')) {
-            e.target.closest('.set-row').classList.remove('active-set');
-        }
-    });
-
-    ui.elements.exerciseTrackerSelect?.addEventListener('change', (e) => {
-        const exerciseName = e.target.value;
-        if (exerciseName) {
-            ui.renderProgressChart(exerciseName);
-            ui.renderE1RMChart(exerciseName);
-        }
-    });
-
-    ui.elements.sleepSlider?.addEventListener('input', (e) => {
-        ui.elements.sleepLabel.textContent = `Sleep: ${e.target.value} hours`;
-    });
-
-    ui.elements.stressSlider?.addEventListener('input', (e) => {
-        ui.elements.stressLabel.textContent = `Stress Level: ${e.target.value}`;
-    });
-
-    document.body.addEventListener('mouseover', e => {
-        const target = e.target.closest('[data-tooltip]');
-        if (target) ui.showTooltip(target);
-    });
-
-    document.body.addEventListener('mouseout', e => {
-        const target = e.target.closest('[data-tooltip]');
-        if (target) ui.hideTooltip();
-    });
-
-    document.getElementById('export-data-btn')?.addEventListener('click', () => {
-        triggerHapticFeedback('light');
-        exportData();
-    });
-
-    document.getElementById('reset-app-btn')?.addEventListener('click', () => {
-        triggerHapticFeedback('heavy');
-        confirmResetApp();
-    });
-}
+            exerciseId: `ex_${newExerciseData.name.replace(/\s+/
